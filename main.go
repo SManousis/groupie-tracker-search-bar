@@ -163,7 +163,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	query = strings.ToLower(query)
 
-	if query == "" {
+	if  == "" {
 		http.Error(w, "Missing search query", http.StatusBadRequest)
 		return
 	}
@@ -174,23 +174,23 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error fetching artists:", err)
 	}
 	for _, v := range Bands {
-		if strings.Contains(strings.ToLower(v.Name), (input)) {
+		if strings.Contains(strings.ToLower(v.Name), (query)) {
 			list = append(list, v.Name+" - artist/band")
 
 		}
-		if strings.Contains(strconv.Itoa(v.CreationDate), (input)) {
+		if strings.Contains(strconv.Itoa(v.CreationDate), (query)) {
 			list = append(list, strconv.Itoa(v.CreationDate)+" - creation dated")
 		}
-		if strings.Contains(strings.ToLower(v.FirstAlbum), (input)) {
+		if strings.Contains(strings.ToLower(v.FirstAlbum), (query)) {
 			list = append(list, v.FirstAlbum+" - first album date")
 		}
 		for _, member := range v.Members {
-			if strings.Contains(strings.ToLower(member), input) {
+			if strings.Contains(strings.ToLower(member), query) {
 				list = append(list, member+" - member")
 			}
 		}
 		for _, location := range v.Locations {
-			if strings.Contains(strings.ToLower(location), input) {
+			if strings.Contains(strings.ToLower(location), query) {
 				list = append(list, location+" - member")
 			}
 		}
