@@ -163,7 +163,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	query = strings.ToLower(query)
 
-	if  == "" {
+	if query == "" {
 		http.Error(w, "Missing search query", http.StatusBadRequest)
 		return
 	}
@@ -191,7 +191,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, location := range v.Locations {
 			if strings.Contains(strings.ToLower(location), query) {
-				list = append(list, location+" - member")
+				list = append(list, location+" - location")
 			}
 		}
 	}
