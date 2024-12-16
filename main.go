@@ -143,6 +143,8 @@ func main() {
 	// Serve the homepage on /
 	http.HandleFunc("/", serveHome)
 
+	http.HandleFunc("/search", searchHandler)
+
 	// Get port from environment variable or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -157,8 +159,14 @@ func main() {
 	}
 }
 
-func search(input string) []string {
-	input = strings.ToLower(input)
+func searchHandler(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	query = strings.ToLower(query)
+
+	if query == "" {
+		http.Error(w, "Missing search query", http.StatusBadRequest)
+		return
+	}
 	var list []string
 	var Bands []Artist
 	err := FetchArtists(&Bands)
@@ -187,5 +195,6 @@ func search(input string) []string {
 			}
 		}
 	}
-	return list
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(list)
 }
