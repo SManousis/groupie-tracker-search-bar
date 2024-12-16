@@ -9,21 +9,20 @@
 <body>
     <header>
         <img src="/static/assets/header.png" alt="Groupie Tracker" />
-        <div class="search-bar">
-
-            <input id="search" type="search" placeholder="&#x1F50D; Start typing to search... " />
-            
-        </div>
+        <div class="search-wrapper">
+            <div class="search-bar">
+              <input id="search" type="search" placeholder="🔍 Start typing to search...">
+              
+              <div class="clear-btn" onclick="clearText()">×</div>
+            </div>
+            <button id="search-btn" class="search-btn">Search</button>
+            <div class="search-container">
+              <div class="search-display"></div> <!-- Suggestions will appear here -->
+            </div>
+          </div>
+          
     </header>
-    <div class="search-container">
-
-        <div class="search-display"></div>
     
-        
-    
-        <div class="posts-container"></div>
-    
-    </div>
     
     <main id="band-container">
         <!-- Cards will be dynamically injected here -->

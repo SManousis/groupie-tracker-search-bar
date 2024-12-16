@@ -75,6 +75,94 @@ function closeExpandedView() {
   if (expandedCard) expandedCard.remove();
 }
 
+function debounce(func, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+var selectedValue;
+// Function to fetch and display search suggestions
+function setupSearchBar() {
+  const searchInput = document.getElementById('search');
+  const suggestionsDisplay = document.querySelector('.search-display');
+
+  // Debounced function to handle the input event
+  const fetchSuggestions = debounce(async () => {
+    const query = searchInput.value.trim();
+
+    // Clear suggestions if input is empty
+    if (!query) {
+      suggestionsDisplay.innerHTML = '';
+      return;
+    }
+
+    try {
+      // Fetch search suggestions from the backend
+      const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const suggestions = await response.json();
+
+      // Limit the number of displayed suggestions (e.g., max 10)
+      const limitedSuggestions = suggestions.slice(0, 10);
+
+      // Display suggestions dynamically
+      suggestionsDisplay.innerHTML = limitedSuggestions
+        .map((suggestion) => `<div class="suggestion">${suggestion}</div>`)
+        .join('');
+
+      // Optional: Add click functionality for suggestions
+      document.querySelectorAll('.suggestion').forEach((item) => {
+        item.addEventListener('click', () => {
+          searchInput.value = item.textContent; // Fill input with suggestion
+          selectedValue  = searchInput.value;
+          suggestionsDisplay.innerHTML = ''; // Clear suggestions
+        });
+      });
+
+    } catch (error) {
+      console.error('Error fetching search results:', error);
+    }
+  }, 300); // Adjust the delay (e.g., 300ms)
+
+  // Attach the debounced function to the input event
+  searchInput.addEventListener('input', fetchSuggestions);
+}
+const inputBar = document.getElementById('search');
+const clearBtn = document.querySelector('.clear-btn');
+
+// Show or hide the clear button based on input
+inputBar.addEventListener('input', function () {
+  if (inputBar.value.trim() !== '') {
+    clearBtn.style.display = 'block';
+  } else {
+    clearBtn.style.display = 'none';
+  }
+});
+
+// Clear the text when the clear button is clicked
+function clearText() {
+  inputBar.value = '';
+  clearBtn.style.display = 'none';
+}
+
+
+
+fetch('/result', {
+  method: 'POST',
+  body: JSON.stringify({ query: selectedValue }),
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+  .then((response) => response.json())
+  .then((filteredData) => {
+    createCards(filteredData); // Dynamically update the UI
+  });
 // Initialize the app
 function init() {
   // artistData is embedded in the HTML by Go
@@ -83,7 +171,10 @@ function init() {
   } else {
     console.error('Artist data is not available.');
   }
+  setupSearchBar();
 }
 
-// Run the app on load
-init();
+
+window.onload = function () {
+  init();
+};

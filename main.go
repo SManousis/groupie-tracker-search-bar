@@ -11,6 +11,10 @@ import (
 	"text/template"
 )
 
+type SearchResult struct {
+	Matches string `json:"matches"`
+}
+
 type Artist struct {
 	ID           int               `json:"id"`
 	Image        string            `json:"image"`
@@ -144,7 +148,7 @@ func main() {
 	http.HandleFunc("/", serveHome)
 
 	http.HandleFunc("/search", searchHandler)
-
+	http.HandleFunc("/result", resultHome)
 	// Get port from environment variable or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -197,4 +201,47 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(list)
+}
+func resultHome(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	for i, r := range query {
+		if r == '-' {
+			query = query[:(i - 2)]
+			break
+		}
+	}
+	var Bands []Artist
+	err := FetchArtists(&Bands)
+	if err != nil {
+		fmt.Println("Error fetching artists:", err)
+	}
+	var result string
+	for _, v := range Bands {
+		if v.Name == query {
+			result = v.Name
+
+		}
+		if strconv.Itoa(v.CreationDate) == query {
+			result = v.Name
+		}
+		if v.FirstAlbum == query {
+			result = v.Name
+		}
+		for _, member := range v.Members {
+			if member == query {
+				result = v.Name
+			}
+		}
+		for _, location := range v.Locations {
+			if location == query {
+				result = v.Name
+			}
+		}
+	}
+	if query == "" {
+		http.Error(w, "Query cannot be empty", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SearchResult{Matches: result})
 }
