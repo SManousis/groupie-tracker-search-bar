@@ -17,7 +17,10 @@ function createCards(artists) {
       <div class="name">${artist.name}</div>
       <div class="year">${artist.creationDate}</div>
     `;
-    card.addEventListener('click', () => expandCard(artist));
+    card.addEventListener('click', () =>{
+      card.classList.remove('highlight');
+      expandCard(artist);
+    }); 
     bandContainer.appendChild(card);
   });
 }
@@ -148,22 +151,12 @@ inputBar.addEventListener('input', function () {
 function clearText() {
   inputBar.value = '';
   clearBtn.style.display = 'none';
+  // Remove highlight from any highlighted card
+  document.querySelectorAll('.card.highlight').forEach(card => {
+    card.classList.remove('highlight');
+  });
 }
 
-
-
-fetch('/result', {
-  method: 'POST',
-  body: JSON.stringify({ query: selectedValue }),
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-  .then((response) => response.json())
-  .then((filteredData) => {
-    createCards(filteredData); // Dynamically update the UI
-  });
-// Initialize the app
 function init() {
   // artistData is embedded in the HTML by Go
   if (window.artistData && Array.isArray(window.artistData)) {
@@ -178,3 +171,48 @@ function init() {
 window.onload = function () {
   init();
 };
+
+document.getElementById('search-btn').addEventListener('click', () => {
+  if (!selectedValue) {
+    alert('Please select or type a valid search term.');
+    return;
+  }
+
+  fetch('/result', {
+    method: 'POST',
+    body: JSON.stringify({ query: selectedValue }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("No matching artist found");
+      }
+      return response.json();
+    })
+    .then((matchedArtist) => {
+      // matchedArtist is the correct band, even if the query was a member or location
+      const queryName = matchedArtist.name.toLowerCase();
+
+      // Now scroll to and highlight that band’s card by comparing names
+      const cards = document.querySelectorAll('.card');
+      let found = false;
+      cards.forEach((card) => {
+        const nameElem = card.querySelector('.name');
+        if (nameElem && nameElem.textContent.trim().toLowerCase() === queryName) {
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+          card.classList.add('highlight');
+          found = true;
+        }
+      });
+
+      if (!found) {
+        alert("No matching artist card found on the page.");
+      }
+    })
+    .catch((error) => {
+      console.error('Error fetching matched artist:', error);
+      alert('No matching artist found.');
+    });
+});

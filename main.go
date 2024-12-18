@@ -202,46 +202,65 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(list)
 }
+
 func resultHome(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("q")
-	for i, r := range query {
-		if r == '-' {
-			query = query[:(i - 2)]
-			break
-		}
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
 	}
+
+	var data struct {
+		Query string `json:"query"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	// Extract the main query (e.g. from "Freddie Mercury - member")
+	parts := strings.Split(data.Query, " - ")
+	query := parts[0]
+	queryLower := strings.ToLower(query)
+
 	var Bands []Artist
 	err := FetchArtists(&Bands)
 	if err != nil {
 		fmt.Println("Error fetching artists:", err)
-	}
-	var result string
-	for _, v := range Bands {
-		if v.Name == query {
-			result = v.Name
-
-		}
-		if strconv.Itoa(v.CreationDate) == query {
-			result = v.Name
-		}
-		if v.FirstAlbum == query {
-			result = v.Name
-		}
-		for _, member := range v.Members {
-			if member == query {
-				result = v.Name
-			}
-		}
-		for _, location := range v.Locations {
-			if location == query {
-				result = v.Name
-			}
-		}
-	}
-	if query == "" {
-		http.Error(w, "Query cannot be empty", http.StatusBadRequest)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	var matchedArtist *Artist
+OuterLoop:
+	for _, v := range Bands {
+		if strings.ToLower(v.Name) == queryLower ||
+			strings.ToLower(strconv.Itoa(v.CreationDate)) == queryLower ||
+			strings.ToLower(v.FirstAlbum) == queryLower {
+			matchedArtist = &v
+			break OuterLoop
+		}
+
+		for _, member := range v.Members {
+			if strings.ToLower(member) == queryLower {
+				matchedArtist = &v
+				break OuterLoop
+			}
+		}
+
+		for _, location := range v.Locations {
+			if strings.ToLower(location) == queryLower {
+				matchedArtist = &v
+				break OuterLoop
+			}
+		}
+	}
+
+	if matchedArtist == nil {
+		http.Error(w, "No artist found", http.StatusNotFound)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(SearchResult{Matches: result})
+	json.NewEncoder(w).Encode(matchedArtist)
 }
