@@ -98,10 +98,17 @@ function setupSearchBar() {
     // Clear suggestions if input is empty
     if (!query) {
       suggestionsDisplay.innerHTML = '';
+      suggestionsDisplay.classList.remove('has-suggestions');
       return;
     }
 
     try {
+      // Clear previous search results (suggestions and highlighted cards)
+      suggestionsDisplay.innerHTML = '';
+      document.querySelectorAll('.card.highlight').forEach(card => {
+        card.classList.remove('highlight');
+      });
+
       // Fetch search suggestions from the backend
       const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
@@ -113,17 +120,23 @@ function setupSearchBar() {
       // Limit the number of displayed suggestions (e.g., max 10)
       const limitedSuggestions = suggestions.slice(0, 10);
 
-      // Display suggestions dynamically
+    // Display suggestions dynamically
+    if (limitedSuggestions.length > 0) {
       suggestionsDisplay.innerHTML = limitedSuggestions
         .map((suggestion) => `<div class="suggestion">${suggestion}</div>`)
         .join('');
-
+      
+      suggestionsDisplay.classList.add('has-suggestions'); // Add border class when suggestions are present
+    } else {
+      suggestionsDisplay.classList.remove('has-suggestions'); // Remove border if no suggestions
+    }
       // Optional: Add click functionality for suggestions
       document.querySelectorAll('.suggestion').forEach((item) => {
         item.addEventListener('click', () => {
           searchInput.value = item.textContent; // Fill input with suggestion
           selectedValue  = searchInput.value;
           suggestionsDisplay.innerHTML = ''; // Clear suggestions
+          suggestionsDisplay.classList.remove('has-suggestions');
         });
       });
 

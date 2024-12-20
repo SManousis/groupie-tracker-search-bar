@@ -258,12 +258,16 @@ header .search-wrapper .search-container {
 header .search-wrapper .search-display {
   position: relative; /* Relative to the wrapper */
   background: white;
-  border: 1px solid #ccc;
+  border: none;
   max-height: 200px;
   overflow-y: auto;
   z-index: 1000;
   width: 100%; /* Match the wrapper's width */
   
+}
+
+header .search-wrapper .search-display.has-suggestions {
+  border: 1px solid #ccc;
 }
 
 /* Suggestions */
@@ -303,10 +307,15 @@ header .search-wrapper .suggestion:hover {
   font-size: 16px;
   border: none;
   border-radius: 5px;
-  background-color: #007BFF;
+  background: linear-gradient(135deg, #8B0000, #B22222);
   color: white;
   cursor: pointer;
   margin-left: 10px;
+  transition: background 0.3s ease;
+}
+
+.search-btn:hover {
+  background: linear-gradient(135deg, #B22222, #8B0000);
 }
 
 .search-btn:hover {
