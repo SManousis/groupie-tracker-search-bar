@@ -321,12 +321,15 @@ header .search-wrapper .suggestion:hover {
 .search-btn:hover {
   background-color: #0056b3;
 }
+/* Highlighted card styling */
 .highlight {
   animation: highlightFade 2s ease;
-  background-color: blue;
+  background: #eb4b0c;
 }
 
 @keyframes highlightFade {
-  0% { background-color: blue; }
+  0% { background-color: #e4340d; }
+  33% { background-color: #ffb700; }
+  66% { background-color: #eb3b13; }
   100% { background-color: transparent; }
 }

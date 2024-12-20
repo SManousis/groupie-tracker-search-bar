@@ -171,34 +171,63 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing search query", http.StatusBadRequest)
 		return
 	}
+
 	var list []string
+	var matchingArtists []Artist
 	var Bands []Artist
+
+	// Fetch the list of artists
 	err := FetchArtists(&Bands)
 	if err != nil {
 		fmt.Println("Error fetching artists:", err)
 	}
-	for _, v := range Bands {
-		if strings.Contains(strings.ToLower(v.Name), (query)) {
-			list = append(list, v.Name+" - artist/band")
 
+	// Check if the search query matches an artist's name, album, creation date, etc.
+	for _, v := range Bands {
+		// Search by artist name
+		if strings.Contains(strings.ToLower(v.Name), query) {
+			list = append(list, v.Name+" - artist/band")
 		}
-		if strings.Contains(strconv.Itoa(v.CreationDate), (query)) {
-			list = append(list, strconv.Itoa(v.CreationDate)+" - creation dated")
-		}
-		if strings.Contains(strings.ToLower(v.FirstAlbum), (query)) {
-			list = append(list, v.FirstAlbum+" - first album date")
-		}
+
+		// Search by band members
 		for _, member := range v.Members {
 			if strings.Contains(strings.ToLower(member), query) {
 				list = append(list, member+" - member")
 			}
 		}
+
+		// Now check for location-based search separately
 		for _, location := range v.Locations {
 			if strings.Contains(strings.ToLower(location), query) {
-				list = append(list, location+" - location")
+				// Collect artists performing in the location and include the location in the result
+				matchingArtists = append(matchingArtists, v)
+			}
+		}
+
+		// Check if the creation date matches
+		if strings.Contains(strconv.Itoa(v.CreationDate), query) {
+			list = append(list, v.Name+" - artist/band created in "+strconv.Itoa(v.CreationDate))
+		}
+
+		// Check if the first album date matches
+		if strings.Contains(strings.ToLower(v.FirstAlbum), query) {
+			list = append(list, v.Name+" - artist/band first album released in "+strings.ToLower(v.FirstAlbum))
+		}
+	}
+
+	// If there are location matches, add them to the list as well with the location info
+	if len(matchingArtists) > 0 {
+		for _, artist := range matchingArtists {
+			for _, location := range artist.Locations {
+				if strings.Contains(strings.ToLower(location), query) {
+					// Add the location to the result as well
+					list = append(list, artist.Name+" - artist/band in location: "+location)
+				}
 			}
 		}
 	}
+
+	// Return the list of suggestions as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(list)
 }

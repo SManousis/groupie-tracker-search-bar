@@ -94,52 +94,70 @@ function setupSearchBar() {
   // Debounced function to handle the input event
   const fetchSuggestions = debounce(async () => {
     const query = searchInput.value.trim();
-
+  
     // Clear suggestions if input is empty
     if (!query) {
       suggestionsDisplay.innerHTML = '';
       suggestionsDisplay.classList.remove('has-suggestions');
       return;
     }
-
+  
     try {
       // Clear previous search results (suggestions and highlighted cards)
       suggestionsDisplay.innerHTML = '';
       document.querySelectorAll('.card.highlight').forEach(card => {
         card.classList.remove('highlight');
       });
-
+  
       // Fetch search suggestions from the backend
       const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+  
       const suggestions = await response.json();
-
+  
       // Limit the number of displayed suggestions (e.g., max 10)
       const limitedSuggestions = suggestions.slice(0, 10);
-
-    // Display suggestions dynamically
-    if (limitedSuggestions.length > 0) {
-      suggestionsDisplay.innerHTML = limitedSuggestions
-        .map((suggestion) => `<div class="suggestion">${suggestion}</div>`)
-        .join('');
-      
-      suggestionsDisplay.classList.add('has-suggestions'); // Add border class when suggestions are present
-    } else {
-      suggestionsDisplay.classList.remove('has-suggestions'); // Remove border if no suggestions
-    }
+  
+      // Display suggestions dynamically
+      if (limitedSuggestions.length > 0) {
+        suggestionsDisplay.innerHTML = limitedSuggestions
+          .map((suggestion) => `<div class="suggestion">${suggestion}</div>`)
+          .join('');
+        
+        suggestionsDisplay.classList.add('has-suggestions'); // Add border class when suggestions are present
+      } else {
+        suggestionsDisplay.classList.remove('has-suggestions'); // Remove border if no suggestions
+      }
+  
+      // Check if search was for a location and highlight matching artists
+      const locationSuggestions = limitedSuggestions.filter(s => s.includes(' - performing in'));
+  
+      if (locationSuggestions.length > 0) {
+        locationSuggestions.forEach(location => {
+          const artistName = location.split(' - ')[0].toLowerCase();
+          const cards = document.querySelectorAll('.card');
+          cards.forEach(card => {
+            const nameElem = card.querySelector('.name');
+            if (nameElem && nameElem.textContent.trim().toLowerCase() === artistName) {
+              card.classList.add('highlight');
+              card.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          });
+        });
+      }
+  
       // Optional: Add click functionality for suggestions
       document.querySelectorAll('.suggestion').forEach((item) => {
         item.addEventListener('click', () => {
           searchInput.value = item.textContent; // Fill input with suggestion
-          selectedValue  = searchInput.value;
+          selectedValue = searchInput.value;
           suggestionsDisplay.innerHTML = ''; // Clear suggestions
           suggestionsDisplay.classList.remove('has-suggestions');
         });
       });
-
+  
     } catch (error) {
       console.error('Error fetching search results:', error);
     }
