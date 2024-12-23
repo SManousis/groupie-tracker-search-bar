@@ -126,7 +126,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Prepare the template with embedded JavaScript
-	tmpl, err := template.ParseFiles("templates/index.html")
+	tmpl, err := template.New("index.html").ParseFiles("templates/index.html")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing template: %v", err), http.StatusInternalServerError)
 		return
