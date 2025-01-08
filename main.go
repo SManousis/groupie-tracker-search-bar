@@ -192,14 +192,14 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		// Search by band members
 		for _, member := range v.Members {
 			if strings.Contains(strings.ToLower(member), query) {
-				list = append(list, member+" - member")
+				list = append(list, member+" - member of "+v.Name)
 			}
 		}
 
-		// Now check for location-based search separately
+		// Check for location
 		for _, location := range v.Locations {
 			if strings.Contains(strings.ToLower(location), query) {
-				// Collect artists performing in the location and include the location in the result
+				// Collect artists performing in the location
 				matchingArtists = append(matchingArtists, v)
 			}
 		}
