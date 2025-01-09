@@ -78,6 +78,7 @@ function closeExpandedView() {
   if (expandedCard) expandedCard.remove();
 }
 
+// Modified debounce function to ensure clearing of previous selections and suggestions
 function debounce(func, delay) {
   let timer;
   return function (...args) {
@@ -85,7 +86,7 @@ function debounce(func, delay) {
     timer = setTimeout(() => func.apply(this, args), delay);
   };
 }
-var selectedValue;
+
 // Function to fetch and display search suggestions
 function setupSearchBar() {
   const searchInput = document.getElementById('search');
@@ -101,14 +102,14 @@ function setupSearchBar() {
       suggestionsDisplay.classList.remove('has-suggestions');
       return;
     }
+
+    // Clear previous search results (suggestions and highlighted cards)
+    suggestionsDisplay.innerHTML = '';
+    document.querySelectorAll('.card.highlight').forEach(card => {
+      card.classList.remove('highlight');
+    });
   
     try {
-      // Clear previous search results (suggestions and highlighted cards)
-      suggestionsDisplay.innerHTML = '';
-      document.querySelectorAll('.card.highlight').forEach(card => {
-        card.classList.remove('highlight');
-      });
-  
       // Fetch search suggestions from the backend
       const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
@@ -116,6 +117,12 @@ function setupSearchBar() {
       }
   
       const suggestions = await response.json();
+
+      // Ensure suggestions is a valid array before proceeding
+      if (!Array.isArray(suggestions)) {
+        console.warn('Received invalid suggestions:', suggestions);
+        return; // Exit if suggestions are not valid
+      }
   
       // Limit the number of displayed suggestions (e.g., max 10)
       const limitedSuggestions = suggestions.slice(0, 10);
@@ -164,46 +171,20 @@ function setupSearchBar() {
   }, 300); // Adjust the delay (e.g., 300ms)
 
   // Attach the debounced function to the input event
-  searchInput.addEventListener('input', fetchSuggestions);
-}
-const inputBar = document.getElementById('search');
-const clearBtn = document.querySelector('.clear-btn');
+  searchInput.addEventListener('input', () => {
+    selectedValue = ''; // Reset the selected value whenever user starts typing
+    fetchSuggestions();
+  });
 
-// Show or hide the clear button based on input
-inputBar.addEventListener('input', function () {
-  if (inputBar.value.trim() !== '') {
-    clearBtn.style.display = 'block';
-  } else {
-    clearBtn.style.display = 'none';
-  }
-});
-
-// Clear the text when the clear button is clicked
-function clearText() {
-  inputBar.value = '';
-  clearBtn.style.display = 'none';
-  // Remove highlight from any highlighted card
-  document.querySelectorAll('.card.highlight').forEach(card => {
-    card.classList.remove('highlight');
+  // Trigger search when pressing "Enter"
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && searchInput.value.trim() !== '') {
+      search();
+    }
   });
 }
 
-function init() {
-  // artistData is embedded in the HTML by Go
-  if (window.artistData && Array.isArray(window.artistData)) {
-    createCards(window.artistData);
-  } else {
-    console.error('Artist data is not available.');
-  }
-  setupSearchBar();
-}
-
-
-window.onload = function () {
-  init();
-};
-
-document.getElementById('search-btn').addEventListener('click', () => {
+function search() {
   if (!selectedValue) {
     alert('Please select or type a valid search term.');
     return;
@@ -246,4 +227,45 @@ document.getElementById('search-btn').addEventListener('click', () => {
       console.error('Error fetching matched artist:', error);
       alert('No matching artist found.');
     });
+}
+
+// Clear the search and reset highlighted cards
+function clearText() {
+  inputBar.value = '';
+  selectedValue = ''; // Reset selected value
+  clearBtn.style.display = 'none';
+  document.querySelectorAll('.card.highlight').forEach(card => {
+    card.classList.remove('highlight');
+  });
+}
+
+// Event listener for the search button click
+document.getElementById('search-btn').addEventListener('click', search);
+
+// Show or hide the clear button based on input
+const inputBar = document.getElementById('search');
+const clearBtn = document.querySelector('.clear-btn');
+inputBar.addEventListener('input', function () {
+  if (inputBar.value.trim() !== '') {
+    clearBtn.style.display = 'block';
+  } else {
+    clearBtn.style.display = 'none';
+  }
 });
+
+var selectedValue;
+
+// Initialize the app
+function init() {
+  // artistData is embedded in the HTML by Go
+  if (window.artistData && Array.isArray(window.artistData)) {
+    createCards(window.artistData);
+  } else {
+    console.error('Artist data is not available.');
+  }
+  setupSearchBar();
+}
+
+window.onload = function () {
+  init();
+};
